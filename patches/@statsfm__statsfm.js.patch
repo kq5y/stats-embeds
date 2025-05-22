@@ -1,0 +1,42 @@
+diff --git a/dist/interfaces/statsfm/query.d.ts b/dist/interfaces/statsfm/query.d.ts
+index 38be0b56788e4415b11d70bfb0ea5516978eb215..b560a970812f7fee4e50123141e08f26e957798f 100644
+--- a/dist/interfaces/statsfm/query.d.ts
++++ b/dist/interfaces/statsfm/query.d.ts
+@@ -20,6 +20,8 @@ export interface QueryWithTimeZone {
+     timeZone?: string;
+ }
+ export interface QueryWithOrder {
++    limit?: number;
++    offset?: number;
+     orderBy?: OrderBySetting;
+ }
+ export interface QueryWithDates {
+diff --git a/dist/interfaces/statsfm/v1/artist.d.ts b/dist/interfaces/statsfm/v1/artist.d.ts
+index b6005033521efb03d85ac4eea2c33baca7164609..add4c43939cddd888049fd6b1badb23c76dbd6ba 100644
+--- a/dist/interfaces/statsfm/v1/artist.d.ts
++++ b/dist/interfaces/statsfm/v1/artist.d.ts
+@@ -2,10 +2,10 @@ import { Object } from '..';
+ import { TopObject } from '../top';
+ export interface ArtistSimple extends Object {
+     name: string;
++    image?: string;
+ }
+ export interface Artist extends ArtistSimple {
+     followers: number;
+-    image?: string;
+     spotifyPopularity: number;
+     externalIds: Record<string, unknown> & {
+         spotify?: string[];
+diff --git a/dist/util/constants.js b/dist/util/constants.js
+index e35f94280c48aea70586cde4750997eb41a28976..3d42b2f91234a52ccc78012023e785883e9a01f0 100644
+--- a/dist/util/constants.js
++++ b/dist/util/constants.js
+@@ -4,7 +4,7 @@ exports.DefaultOptions = exports.DefaultUserAgentAppendix = exports.DefaultUserA
+ // eslint-disable-next-line import/no-commonjs
+ const { version } = require('../../package.json');
+ exports.DefaultUserAgent = `@statsfm/statsfm.js (${version})`;
+-exports.DefaultUserAgentAppendix = process.release?.name === 'node' ? `Node.js/${process.version}` : navigator.userAgent || '';
++exports.DefaultUserAgentAppendix = 'Node.js';
+ exports.DefaultOptions = {
+     http: {
+         retries: 3,
