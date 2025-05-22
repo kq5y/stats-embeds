@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stats-embeds",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-22",
+  "assets": {
+		"binding": "ASSETS",
+		"directory": "./public"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"routes": [{ "pattern": "stats-embeds.kq5.jp", "custom_domain": true }],
+	"workers_dev": false,
+	"preview_urls": false,
+}
