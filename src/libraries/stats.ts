@@ -10,6 +10,8 @@ export type Range = "today" | "days" | "weeks" | "months" | "lifetime";
 
 export type Visibility = "hidden" | "visible";
 
+export class StatsFMAPIError extends statsfm.StatsFMAPIError {}
+
 export function isRange(value: string): value is LastRange & Range {
   return (
     value === "1day" ||

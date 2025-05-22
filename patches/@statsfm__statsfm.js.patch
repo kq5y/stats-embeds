@@ -1,3 +1,16 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 8f56d4ae3f169ba49312d21bc9cd107cc6621557..786d99cc30f832b84c80200a9f722ada7d89ec50 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -1,4 +1,6 @@
+-import Api from './lib/api';
+-export * from './interfaces';
++import Api from "./lib/api";
++export * from "./interfaces";
++export { StatsFMAPIError } from "./lib/errors/StatsFMAPIError";
+ export default Api;
+ export { Api };
++
 diff --git a/dist/interfaces/statsfm/query.d.ts b/dist/interfaces/statsfm/query.d.ts
 index 38be0b56788e4415b11d70bfb0ea5516978eb215..b560a970812f7fee4e50123141e08f26e957798f 100644
 --- a/dist/interfaces/statsfm/query.d.ts
@@ -28,7 +41,7 @@ index b6005033521efb03d85ac4eea2c33baca7164609..add4c43939cddd888049fd6b1badb23c
      externalIds: Record<string, unknown> & {
          spotify?: string[];
 diff --git a/dist/util/constants.js b/dist/util/constants.js
-index e35f94280c48aea70586cde4750997eb41a28976..3d42b2f91234a52ccc78012023e785883e9a01f0 100644
+index e35f94280c48aea70586cde4750997eb41a28976..9ff4f43c8747d9d6362e1b92a925d124faef55a6 100644
 --- a/dist/util/constants.js
 +++ b/dist/util/constants.js
 @@ -4,7 +4,7 @@ exports.DefaultOptions = exports.DefaultUserAgentAppendix = exports.DefaultUserA
