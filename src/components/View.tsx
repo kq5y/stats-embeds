@@ -1,9 +1,11 @@
 import { Style, css } from "hono/css";
 
 import {
+  type PlayingTrack,
   type RecentlyTrack,
   type TopTrack,
   getArtistsString,
+  getPlayDate,
   getTrackUrl,
 } from "@/libraries/stats";
 
@@ -12,7 +14,7 @@ type ViewProps = {
 } & (
   | {
       type: "recently";
-      tracks: RecentlyTrack[];
+      tracks: (RecentlyTrack | PlayingTrack)[];
     }
   | {
       type: "frequently";
@@ -236,6 +238,13 @@ export default function View({ title, type, tracks }: ViewProps) {
                       </a>
                       <span>{getArtistsString(track)}</span>
                     </div>
+                    {type === "recently" && (
+                      <div className="track-addition">
+                        <span>
+                          {getPlayDate(track as RecentlyTrack | PlayingTrack)}
+                        </span>
+                      </div>
+                    )}
                     {type === "frequently" && (
                       <div className="track-addition">
                         <span>{(track as TopTrack).streams} times</span>

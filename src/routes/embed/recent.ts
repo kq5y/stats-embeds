@@ -1,17 +1,37 @@
 import type { Handler } from "hono";
 
 import View from "@/components/View";
-import { getApi, getRecentTracks } from "@/libraries/stats";
+import {
+  type PlayingTrack,
+  type RecentlyTrack,
+  getApi,
+  getPlayingTrack,
+  getRecentTracks,
+  isVisibility,
+} from "@/libraries/stats";
 
 const handler: Handler<Env, "recent"> = async (c) => {
-  const { user } = c.req.query();
+  const { user, now = "visible" } = c.req.query();
 
   if (!user) {
     return c.text("User not found", 400);
   }
+  if (!isVisibility(now)) {
+    return c.text("Invalid visibility", 400);
+  }
 
   const api = getApi();
-  const tracks = await getRecentTracks(api, user);
+  const tracks = (await getRecentTracks(api, user)) as (
+    | RecentlyTrack
+    | PlayingTrack
+  )[];
+
+  if (now === "visible") {
+    const playingTrack = await getPlayingTrack(api, user);
+    if (playingTrack) {
+      tracks.unshift(playingTrack);
+    }
+  }
 
   const response = await c.html(
     View({

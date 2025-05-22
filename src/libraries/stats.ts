@@ -2,9 +2,13 @@ import * as statsfm from "@statsfm/statsfm.js";
 
 export type RecentlyTrack = statsfm.v1.RecentlyPlayedTrack;
 export type TopTrack = statsfm.v1.TopTrack;
+export type PlayingTrack = statsfm.v1.CurrentlyPlayingTrack;
+export type Track = RecentlyTrack | TopTrack | PlayingTrack;
 
 export type LastRange = "1day" | "7day" | "1month" | "6month" | "overall";
 export type Range = "today" | "days" | "weeks" | "months" | "lifetime";
+
+export type Visibility = "hidden" | "visible";
 
 export function isRange(value: string): value is LastRange & Range {
   return (
@@ -37,21 +41,25 @@ export function formatRange(range: LastRange & Range): Range {
   return range;
 }
 
-function getStatsfmUrl(track: RecentlyTrack | TopTrack) {
+export function isVisibility(value: string): value is Visibility {
+  return value === "hidden" || value === "visible";
+}
+
+function getStatsfmUrl(track: Track) {
   return `https://stats.fm/track/${track.track.id}`;
 }
 
-function getSpotifyUrl(track: RecentlyTrack | TopTrack) {
+function getSpotifyUrl(track: Track) {
   if (!track.track.externalIds?.spotify?.[0]) return undefined;
   return `https://open.spotify.com/track/${track.track.externalIds.spotify[0]}`;
 }
 
-function getAppleMusicUrl(track: RecentlyTrack | TopTrack) {
+function getAppleMusicUrl(track: Track) {
   if (!track.track.externalIds?.appleMusic?.[0]) return undefined;
   return `https://music.apple.com/song/${track.track.externalIds.appleMusic[0]}`;
 }
 
-export function getTrackUrl(track: RecentlyTrack | TopTrack) {
+export function getTrackUrl(track: Track) {
   const spotifyUrl = getSpotifyUrl(track);
   if (spotifyUrl) return spotifyUrl;
   const appleMusicUrl = getAppleMusicUrl(track);
@@ -59,7 +67,7 @@ export function getTrackUrl(track: RecentlyTrack | TopTrack) {
   return getStatsfmUrl(track);
 }
 
-export function getArtistsString(track: RecentlyTrack | TopTrack) {
+export function getArtistsString(track: Track) {
   const artists = track.track.artists.filter((artist) => artist.image);
   if (artists.length === 0)
     return track.track.artists
@@ -74,6 +82,18 @@ export function getArtistsString(track: RecentlyTrack | TopTrack) {
     .join(", ");
 }
 
+export function getPlayDate(track: RecentlyTrack | PlayingTrack) {
+  if ("isPlaying" in track) return "now";
+  const date = new Date(track.endTime);
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  const days = Math.floor(diff / 86400);
+  if (days > 0) return `${days}d`;
+  const hours = Math.floor(diff / 3600);
+  if (hours > 0) return `${hours}h`;
+  const minutes = Math.floor(diff / 60);
+  return `${minutes}m`;
+}
+
 export function getApi(
   accessToken?: string,
   apiUrl = "https://api.stats.fm/api"
@@ -86,6 +106,10 @@ export function getApi(
       apiUrl,
     },
   });
+}
+
+export async function getPlayingTrack(api: statsfm.Api, userId: string) {
+  return await api.users.currentlyStreaming(userId);
 }
 
 export async function getRecentTracks(api: statsfm.Api, userId: string) {
