@@ -2,11 +2,11 @@ import type { Handler } from "hono";
 
 import View from "@/components/View";
 import {
-  StatsFMAPIError,
   formatRange,
   getApi,
   getTopTracks,
   isRange,
+  isStatsfmError,
 } from "@/libraries/stats";
 
 const handler: Handler<Env, "top"> = async (c) => {
@@ -40,7 +40,7 @@ const handler: Handler<Env, "top"> = async (c) => {
 
     return response;
   } catch (error) {
-    if (error instanceof StatsFMAPIError) {
+    if (isStatsfmError(error)) {
       if (typeof error.rawError === "string") {
         return c.text(error.rawError, error.status);
       }

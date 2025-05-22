@@ -4,10 +4,10 @@ import View from "@/components/View";
 import {
   type PlayingTrack,
   type RecentlyTrack,
-  StatsFMAPIError,
   getApi,
   getPlayingTrack,
   getRecentTracks,
+  isStatsfmError,
   isVisibility,
 } from "@/libraries/stats";
 
@@ -50,7 +50,7 @@ const handler: Handler<Env, "recent"> = async (c) => {
 
     return response;
   } catch (error) {
-    if (error instanceof StatsFMAPIError) {
+    if (isStatsfmError(error)) {
       if (typeof error.rawError === "string") {
         return c.text(error.rawError, error.status);
       }

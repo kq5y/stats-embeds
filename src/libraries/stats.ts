@@ -10,7 +10,22 @@ export type Range = "today" | "days" | "weeks" | "months" | "lifetime";
 
 export type Visibility = "hidden" | "visible";
 
-export class StatsFMAPIError extends statsfm.StatsFMAPIError {}
+export function isStatsfmError(
+  error: unknown
+): error is statsfm.StatsFMAPIError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "rawError" in error &&
+    "status" in error &&
+    typeof error.status === "number" &&
+    (typeof error.rawError === "string" ||
+      (typeof error.rawError === "object" &&
+        error.rawError !== null &&
+        "message" in error.rawError &&
+        typeof error.rawError.message === "string"))
+  );
+}
 
 export function isRange(value: string): value is LastRange & Range {
   return (
