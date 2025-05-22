@@ -1,9 +1,13 @@
-import { Hono } from 'hono'
+import { Hono } from "hono";
 
-const app = new Hono()
+import { router as embedRouter } from "./routes/embed";
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+const app = new Hono<Env>();
 
-export default app
+app.route("/embed", embedRouter);
+
+app.notFound((c) => {
+  return c.text("not found", 404);
+});
+
+export default app;
