@@ -1,16 +1,24 @@
 import { Style, css } from "hono/css";
 
-import { getArtistsString, getTrackUrl, type RecentlyTrack, type TopTrack } from "@/libraries/stats";
+import {
+  type RecentlyTrack,
+  type TopTrack,
+  getArtistsString,
+  getTrackUrl,
+} from "@/libraries/stats";
 
 type ViewProps = {
   title: string;
-} & ({
-  type: "recently";
-  tracks: RecentlyTrack[];
-} | {
-  type: "frequently";
-  tracks: TopTrack[];
-})
+} & (
+  | {
+      type: "recently";
+      tracks: RecentlyTrack[];
+    }
+  | {
+      type: "frequently";
+      tracks: TopTrack[];
+    }
+);
 
 const GLOBAL_CSS = css`
 body {
@@ -180,9 +188,9 @@ a:hover h3 {
     padding-right: 0.25rem;
   }
 }
-`
+`;
 
-export default function View({title, type, tracks}: ViewProps) {
+export default function View({ title, type, tracks }: ViewProps) {
   return (
     <html lang="en">
       <head>
@@ -200,11 +208,12 @@ export default function View({title, type, tracks}: ViewProps) {
           <div className="image-grid">
             {tracks.slice(0, 4).map((track) => (
               <img
-                  src={track.track.albums[0].image}
-                  alt="thumbnail"
-                  loading="lazy"
-                  decoding="async"
-                />
+                key={track.track.id}
+                src={track.track.albums[0].image}
+                alt="thumbnail"
+                loading="lazy"
+                decoding="async"
+              />
             ))}
           </div>
           <div className="content">
@@ -212,7 +221,10 @@ export default function View({title, type, tracks}: ViewProps) {
             <div className="track-list">
               <ol>
                 {tracks.slice(0, 100).map((track, i) => (
-                  <li key={i} title={`${track.track.name} - ${getArtistsString(track)}`}>
+                  <li
+                    key={i}
+                    title={`${track.track.name} - ${getArtistsString(track)}`}
+                  >
                     <div className="track-index">{i + 1}</div>
                     <div className="track-info">
                       <a
@@ -237,5 +249,5 @@ export default function View({title, type, tracks}: ViewProps) {
         </div>
       </body>
     </html>
-  )
+  );
 }

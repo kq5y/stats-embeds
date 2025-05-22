@@ -1,4 +1,1 @@
-interface Bindings {
-}
-
-type Env = { Bindings: Bindings };
+type Env = { Bindings: object };

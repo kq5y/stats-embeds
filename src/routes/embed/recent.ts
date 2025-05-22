@@ -17,7 +17,7 @@ const handler: Handler<Env, "recent"> = async (c) => {
     View({
       title: `Recently Played by ${user}`,
       type: "recently",
-      tracks
+      tracks,
     }),
     200,
     {
@@ -27,6 +27,6 @@ const handler: Handler<Env, "recent"> = async (c) => {
   response.headers.delete("x-frame-options");
 
   return response;
-}
+};
 
 export { handler };

@@ -22,7 +22,7 @@ const handler: Handler<Env, "top"> = async (c) => {
     View({
       title: `Top Tracks by ${user} (${formattedRange})`,
       type: "frequently",
-      tracks
+      tracks,
     }),
     200,
     {
@@ -32,6 +32,6 @@ const handler: Handler<Env, "top"> = async (c) => {
   response.headers.delete("x-frame-options");
 
   return response;
-}
+};
 
 export { handler };
