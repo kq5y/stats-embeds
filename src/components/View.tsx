@@ -24,6 +24,28 @@ type ViewProps = {
 
 const IMAGE_GRID_LIMIT = 4;
 
+function getImageTracks(tracks: ViewProps["tracks"]) {
+  const seenImages = new Set<string>();
+  const imageTracks = [];
+
+  for (const track of tracks) {
+    const image = track.track.albums[0]?.image;
+
+    if (!image || seenImages.has(image)) {
+      continue;
+    }
+
+    seenImages.add(image);
+    imageTracks.push(track);
+
+    if (imageTracks.length === IMAGE_GRID_LIMIT) {
+      break;
+    }
+  }
+
+  return imageTracks;
+}
+
 const GLOBAL_CSS = css`
 body {
   margin: 0;
@@ -205,7 +227,7 @@ a:hover h3 {
 
 export default function View({ title, type, tracks }: ViewProps) {
   const now = Date.now();
-  const imageTracks = tracks.slice(0, IMAGE_GRID_LIMIT);
+  const imageTracks = getImageTracks(tracks);
 
   return (
     <html lang="en">
