@@ -41,7 +41,7 @@ const handler: Handler<Env, "top"> = async (c) => {
     const api = getApi();
     const tracks = await getTopTracks(api, user, formattedRange);
 
-    return renderEmbedResponse(
+    return await renderEmbedResponse(
       c,
       {
         title: `Top Tracks by ${user} (${formattedRange})`,

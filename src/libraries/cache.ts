@@ -14,6 +14,14 @@ export type CacheOptions = {
 
 const CACHE_STATUS_HEADER = "X-Embed-Cache";
 
+function getDefaultCache() {
+  if (typeof caches === "undefined" || !("default" in caches)) {
+    return null;
+  }
+
+  return caches.default;
+}
+
 export function getCacheControl({
   browserTtl,
   edgeTtl,
@@ -51,12 +59,17 @@ export async function getCachedHtml(
   c: Context,
   { cacheControl, defaultSearchParams, searchParams }: CacheOptions
 ) {
+  const cache = getDefaultCache();
+  if (!cache) {
+    return null;
+  }
+
   const cacheRequest = createCacheRequest(
     c.req.raw,
     searchParams,
     defaultSearchParams
   );
-  const cachedResponse = await caches.default.match(cacheRequest);
+  const cachedResponse = await cache.match(cacheRequest);
 
   if (!cachedResponse) {
     return null;
@@ -80,13 +93,23 @@ export function cacheHtml(
     return response;
   }
 
+  const cache = getDefaultCache();
+  if (!cache) {
+    response.headers.set(CACHE_STATUS_HEADER, "BYPASS");
+    return response;
+  }
+
   const cacheRequest = createCacheRequest(
     c.req.raw,
     searchParams,
     defaultSearchParams
   );
   const cacheableResponse = response.clone();
-  c.executionCtx.waitUntil(caches.default.put(cacheRequest, cacheableResponse));
+  const cachePromise = cache.put(cacheRequest, cacheableResponse);
+
+  if ("executionCtx" in c && c.executionCtx) {
+    c.executionCtx.waitUntil(cachePromise);
+  }
 
   response.headers.set(CACHE_STATUS_HEADER, "MISS");
 

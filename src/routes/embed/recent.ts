@@ -75,7 +75,7 @@ const handler: Handler<Env, "recent"> = async (c) => {
         ]
       : (recentTracks as (RecentlyTrack | PlayingTrack)[]);
 
-    return renderEmbedResponse(
+    return await renderEmbedResponse(
       c,
       {
         title: `Recently Played by ${user}`,

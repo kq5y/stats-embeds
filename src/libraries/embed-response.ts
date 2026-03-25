@@ -13,12 +13,12 @@ export async function getCachedEmbedResponse(
   return await getCachedHtml(c, cacheOptions);
 }
 
-export function renderEmbedResponse(
+export async function renderEmbedResponse(
   c: Context,
   viewProps: ViewProps,
   cacheOptions: CacheOptions
 ) {
-  const response = c.html(View(viewProps), 200);
+  const response = await c.html(View(viewProps), 200);
   response.headers.set("Content-Security-Policy", "frame-ancestors *");
   response.headers.delete("x-frame-options");
 
@@ -26,6 +26,8 @@ export function renderEmbedResponse(
 }
 
 export function getStatsfmErrorResponse(c: Context, error: unknown) {
+  console.error(error);
+
   if (!isStatsfmError(error)) {
     return c.text("Internal Server Error", 500);
   }

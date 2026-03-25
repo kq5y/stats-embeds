@@ -7,7 +7,7 @@ const app = new Hono<Env>();
 app.route("/embed", embedRouter);
 
 app.notFound(async (c) => {
-  if (c.req.method === "GET" || c.req.method === "HEAD") {
+  if ((c.req.method === "GET" || c.req.method === "HEAD") && c.env.ASSETS) {
     const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
 
     if (assetResponse.status !== 404) {
