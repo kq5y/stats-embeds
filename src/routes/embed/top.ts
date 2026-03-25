@@ -1,6 +1,7 @@
 import type { Handler } from "hono";
 
 import View from "@/components/View";
+import { cacheHtml, getCacheControl, getCachedHtml } from "@/libraries/cache";
 import {
   formatRange,
   getApi,
@@ -8,6 +9,12 @@ import {
   isRange,
   isStatsfmError,
 } from "@/libraries/stats";
+
+const CACHE_CONTROL = getCacheControl({
+  browserTtl: 300,
+  edgeTtl: 1800,
+  staleWhileRevalidate: 86400,
+});
 
 const handler: Handler<Env, "top"> = async (c) => {
   try {
@@ -22,6 +29,11 @@ const handler: Handler<Env, "top"> = async (c) => {
     }
     const formattedRange = formatRange(range);
 
+    const cachedResponse = await getCachedHtml(c, CACHE_CONTROL);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
     const api = getApi();
     const tracks = await getTopTracks(api, user, formattedRange);
 
@@ -31,16 +43,12 @@ const handler: Handler<Env, "top"> = async (c) => {
         type: "frequently",
         tracks,
       }),
-      200,
-      {
-        "Content-Security-Policy": "frame-ancestors *",
-        "Cache-Control":
-          "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
-      }
+      200
     );
+    response.headers.set("Content-Security-Policy", "frame-ancestors *");
     response.headers.delete("x-frame-options");
 
-    return response;
+    return cacheHtml(c, response, CACHE_CONTROL);
   } catch (error) {
     if (isStatsfmError(error)) {
       if (typeof error.rawError === "string") {

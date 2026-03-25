@@ -1,6 +1,7 @@
 import type { Handler } from "hono";
 
 import View from "@/components/View";
+import { cacheHtml, getCacheControl, getCachedHtml } from "@/libraries/cache";
 import {
   type PlayingTrack,
   type RecentlyTrack,
@@ -11,6 +12,18 @@ import {
   isVisibility,
 } from "@/libraries/stats";
 
+const CACHE_CONTROL_VISIBLE = getCacheControl({
+  browserTtl: 15,
+  edgeTtl: 60,
+  staleWhileRevalidate: 600,
+});
+
+const CACHE_CONTROL_HIDDEN = getCacheControl({
+  browserTtl: 60,
+  edgeTtl: 300,
+  staleWhileRevalidate: 600,
+});
+
 const handler: Handler<Env, "recent"> = async (c) => {
   try {
     const { user, now = "visible" } = c.req.query();
@@ -20,6 +33,13 @@ const handler: Handler<Env, "recent"> = async (c) => {
     }
     if (!isVisibility(now)) {
       return c.text("Invalid visibility", 400);
+    }
+
+    const cacheControl =
+      now === "visible" ? CACHE_CONTROL_VISIBLE : CACHE_CONTROL_HIDDEN;
+    const cachedResponse = await getCachedHtml(c, cacheControl);
+    if (cachedResponse) {
+      return cachedResponse;
     }
 
     const api = getApi();
@@ -43,15 +63,12 @@ const handler: Handler<Env, "recent"> = async (c) => {
         type: "recently",
         tracks,
       }),
-      200,
-      {
-        "Content-Security-Policy": "frame-ancestors *",
-        "Cache-Control": `public, max-age=${now === "visible" ? 15 : 60}, s-maxage=${now === "visible" ? 60 : 300}, stale-while-revalidate=600`,
-      }
+      200
     );
+    response.headers.set("Content-Security-Policy", "frame-ancestors *");
     response.headers.delete("x-frame-options");
 
-    return response;
+    return cacheHtml(c, response, cacheControl);
   } catch (error) {
     if (isStatsfmError(error)) {
       if (typeof error.rawError === "string") {
