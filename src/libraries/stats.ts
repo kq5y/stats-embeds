@@ -10,6 +10,19 @@ export type Range = "today" | "days" | "weeks" | "months" | "lifetime";
 
 export type Visibility = "hidden" | "visible";
 
+export const RECENT_TRACK_LIMIT = 100;
+export const TOP_TRACK_LIMIT = 100;
+
+const DEFAULT_API_URL = "https://api.stats.fm/api";
+const sharedApi = new statsfm.Api({
+  auth: {
+    accessToken: undefined,
+  },
+  http: {
+    apiUrl: DEFAULT_API_URL,
+  },
+});
+
 export function isStatsfmError(
   error: unknown
 ): error is statsfm.StatsFMAPIError {
@@ -85,24 +98,19 @@ export function getTrackUrl(track: Track) {
 }
 
 export function getArtistsString(track: Track) {
-  const artists = track.track.artists.filter((artist) => artist.image);
-  if (artists.length === 0)
-    return track.track.artists
-      .slice(0, 2)
-      .map((artist) => artist.name)
-      .toReversed()
-      .join(", ");
-  return artists
+  return track.track.artists
     .slice(0, 2)
     .map((artist) => artist.name)
-    .toReversed()
     .join(", ");
 }
 
-export function getPlayDate(track: RecentlyTrack | PlayingTrack) {
+export function getPlayDate(
+  track: RecentlyTrack | PlayingTrack,
+  now = Date.now()
+) {
   if ("isPlaying" in track) return "now";
   const date = new Date(track.endTime);
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  const diff = Math.floor((now - date.getTime()) / 1000);
   const days = Math.floor(diff / 86400);
   if (days > 0) return `${days}d`;
   const hours = Math.floor(diff / 3600);
@@ -111,10 +119,11 @@ export function getPlayDate(track: RecentlyTrack | PlayingTrack) {
   return `${minutes}m`;
 }
 
-export function getApi(
-  accessToken?: string,
-  apiUrl = "https://api.stats.fm/api"
-) {
+export function getApi(accessToken?: string, apiUrl = DEFAULT_API_URL) {
+  if (!accessToken && apiUrl === DEFAULT_API_URL) {
+    return sharedApi;
+  }
+
   return new statsfm.Api({
     auth: {
       accessToken,
@@ -129,20 +138,25 @@ export async function getPlayingTrack(api: statsfm.Api, userId: string) {
   return await api.users.currentlyStreaming(userId);
 }
 
-export async function getRecentTracks(api: statsfm.Api, userId: string) {
+export async function getRecentTracks(
+  api: statsfm.Api,
+  userId: string,
+  limit = RECENT_TRACK_LIMIT
+) {
   return await api.users.recentlyStreamed(userId, {
-    limit: 50,
+    limit,
   });
 }
 
 export async function getTopTracks(
   api: statsfm.Api,
   userId: string,
-  range: Range = "weeks"
+  range: Range = "weeks",
+  limit = TOP_TRACK_LIMIT
 ) {
   return await api.users.topTracks(userId, {
     range: range as statsfm.Range,
     orderBy: statsfm.OrderBySetting.COUNT,
-    limit: 100,
+    limit,
   });
 }

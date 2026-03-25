@@ -25,7 +25,7 @@ const handler: Handler<Env, "top"> = async (c) => {
     const api = getApi();
     const tracks = await getTopTracks(api, user, formattedRange);
 
-    const response = await c.html(
+    const response = c.html(
       View({
         title: `Top Tracks by ${user} (${formattedRange})`,
         type: "frequently",
@@ -34,6 +34,8 @@ const handler: Handler<Env, "top"> = async (c) => {
       200,
       {
         "Content-Security-Policy": "frame-ancestors *",
+        "Cache-Control":
+          "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
       }
     );
     response.headers.delete("x-frame-options");

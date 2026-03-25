@@ -22,6 +22,8 @@ type ViewProps = {
     }
 );
 
+const IMAGE_GRID_LIMIT = 4;
+
 const GLOBAL_CSS = css`
 body {
   margin: 0;
@@ -72,6 +74,7 @@ h1 {
   margin: 0 0 0.5rem 0;
   white-space: nowrap;
   text-overflow: ellipsis;
+  overflow: hidden;
   height: 1.5rem;
 }
 
@@ -98,6 +101,8 @@ h1 {
   transition: background-color 0.3s ease;
   border-radius: 0.4rem;
   cursor: default;
+  content-visibility: auto;
+  contain-intrinsic-size: 2rem;
 }
 
 .track-index {
@@ -110,6 +115,7 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   overflow: hidden;
+  min-width: 0;
 }
 
 .track-info h3,
@@ -142,6 +148,11 @@ h1 {
 a {
   text-decoration: none;
   color: inherit;
+}
+
+.track-info a {
+  overflow: hidden;
+  min-width: 0;
 }
 
 a:hover h3 {
@@ -193,6 +204,9 @@ a:hover h3 {
 `;
 
 export default function View({ title, type, tracks }: ViewProps) {
+  const now = Date.now();
+  const imageTracks = tracks.slice(0, IMAGE_GRID_LIMIT);
+
   return (
     <html lang="en">
       <head>
@@ -202,19 +216,22 @@ export default function View({ title, type, tracks }: ViewProps) {
         <link
           rel="preconnect"
           href="https://i.scdn.co"
-          crossorigin="anonymous"
+          crossOrigin="anonymous"
         />
       </head>
       <body>
         <div className="embed-container">
           <div className="image-grid">
-            {tracks.slice(0, 4).map((track) => (
+            {imageTracks.map((track, index) => (
               <img
-                key={track.track.id}
+                key={`${track.track.id}:${index}`}
                 src={track.track.albums[0].image}
                 alt="thumbnail"
-                loading="lazy"
+                loading="eager"
                 decoding="async"
+                fetchPriority={index === 0 ? "high" : undefined}
+                width="65"
+                height="65"
               />
             ))}
           </div>
@@ -222,36 +239,42 @@ export default function View({ title, type, tracks }: ViewProps) {
             <h1>{title}</h1>
             <div className="track-list">
               <ol>
-                {tracks.slice(0, 100).map((track, i) => (
-                  <li
-                    key={i}
-                    title={`${track.track.name} - ${getArtistsString(track)}`}
-                  >
-                    <div className="track-index">{i + 1}</div>
-                    <div className="track-info">
-                      <a
-                        href={getTrackUrl(track)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <h3>{track.track.name}</h3>
-                      </a>
-                      <span>{getArtistsString(track)}</span>
-                    </div>
-                    {type === "recently" && (
-                      <div className="track-addition">
-                        <span>
-                          {getPlayDate(track as RecentlyTrack | PlayingTrack)}
-                        </span>
+                {tracks.map((track, index) => {
+                  const artists = getArtistsString(track);
+                  const titleText = `${track.track.name} - ${artists}`;
+                  const key =
+                    type === "recently"
+                      ? "isPlaying" in track
+                        ? `${track.track.id}:playing`
+                        : `${track.track.id}:${track.endTime}`
+                      : `${track.track.id}:${track.streams}`;
+
+                  return (
+                    <li key={key} title={titleText}>
+                      <div className="track-index">{index + 1}</div>
+                      <div className="track-info">
+                        <a
+                          href={getTrackUrl(track)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <h3>{track.track.name}</h3>
+                        </a>
+                        <span>{artists}</span>
                       </div>
-                    )}
-                    {type === "frequently" && (
-                      <div className="track-addition">
-                        <span>{(track as TopTrack).streams} times</span>
-                      </div>
-                    )}
-                  </li>
-                ))}
+                      {type === "recently" && (
+                        <div className="track-addition">
+                          <span>{getPlayDate(track, now)}</span>
+                        </div>
+                      )}
+                      {type === "frequently" && (
+                        <div className="track-addition">
+                          <span>{track.streams} times</span>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             </div>
           </div>

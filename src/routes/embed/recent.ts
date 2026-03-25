@@ -23,19 +23,21 @@ const handler: Handler<Env, "recent"> = async (c) => {
     }
 
     const api = getApi();
-    const tracks = (await getRecentTracks(api, user)) as (
-      | RecentlyTrack
-      | PlayingTrack
-    )[];
+    const recentTracksPromise = getRecentTracks(api, user);
+    const playingTrackPromise =
+      now === "visible" ? getPlayingTrack(api, user) : Promise.resolve(null);
 
-    if (now === "visible") {
-      const playingTrack = await getPlayingTrack(api, user);
-      if (playingTrack) {
-        tracks.unshift(playingTrack);
-      }
+    const [recentTracks, playingTrack] = await Promise.all([
+      recentTracksPromise,
+      playingTrackPromise,
+    ]);
+    const tracks = recentTracks as (RecentlyTrack | PlayingTrack)[];
+
+    if (playingTrack) {
+      tracks.unshift(playingTrack);
     }
 
-    const response = await c.html(
+    const response = c.html(
       View({
         title: `Recently Played by ${user}`,
         type: "recently",
@@ -44,6 +46,7 @@ const handler: Handler<Env, "recent"> = async (c) => {
       200,
       {
         "Content-Security-Policy": "frame-ancestors *",
+        "Cache-Control": `public, max-age=${now === "visible" ? 15 : 60}, s-maxage=${now === "visible" ? 60 : 300}, stale-while-revalidate=600`,
       }
     );
     response.headers.delete("x-frame-options");
