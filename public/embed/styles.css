@@ -44,11 +44,12 @@ body {
 
 h1 {
   font-size: 1rem;
+  line-height: 1.25;
   margin: 0 0 0.5rem 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  height: 1.5rem;
+  min-height: 1.25rem;
 }
 
 .track-list {
@@ -79,6 +80,8 @@ h1 {
 }
 
 .track-index {
+  font-size: 0.8rem;
+  line-height: 1.2;
   text-align: center;
   color: #ccc;
 }
@@ -149,6 +152,7 @@ a:hover h3 {
 
   h1 {
     font-size: 0.85rem;
+    line-height: 1.25;
     margin: 0 0 0.4rem 0;
   }
 
