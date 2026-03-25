@@ -1,20 +1,24 @@
 import type { Handler } from "hono";
 
-import View from "@/components/View";
-import { cacheHtml, getCacheControl, getCachedHtml } from "@/libraries/cache";
+import { type CacheOptions, getCacheControl } from "@/libraries/cache";
 import {
-  formatRange,
-  getApi,
-  getTopTracks,
-  isRange,
-  isStatsfmError,
-} from "@/libraries/stats";
+  getCachedEmbedResponse,
+  getStatsfmErrorResponse,
+  renderEmbedResponse,
+} from "@/libraries/embed-response";
+import { formatRange, getApi, getTopTracks, isRange } from "@/libraries/stats";
 
 const CACHE_CONTROL = getCacheControl({
   browserTtl: 300,
   edgeTtl: 1800,
   staleWhileRevalidate: 86400,
 });
+
+const CACHE_OPTIONS: CacheOptions = {
+  cacheControl: CACHE_CONTROL,
+  defaultSearchParams: { range: "weeks" },
+  searchParams: ["user", "range"],
+};
 
 const handler: Handler<Env, "top"> = async (c) => {
   try {
@@ -29,7 +33,7 @@ const handler: Handler<Env, "top"> = async (c) => {
     }
     const formattedRange = formatRange(range);
 
-    const cachedResponse = await getCachedHtml(c, CACHE_CONTROL);
+    const cachedResponse = await getCachedEmbedResponse(c, CACHE_OPTIONS);
     if (cachedResponse) {
       return cachedResponse;
     }
@@ -37,26 +41,17 @@ const handler: Handler<Env, "top"> = async (c) => {
     const api = getApi();
     const tracks = await getTopTracks(api, user, formattedRange);
 
-    const response = c.html(
-      View({
+    return renderEmbedResponse(
+      c,
+      {
         title: `Top Tracks by ${user} (${formattedRange})`,
         type: "frequently",
         tracks,
-      }),
-      200
+      },
+      CACHE_OPTIONS
     );
-    response.headers.set("Content-Security-Policy", "frame-ancestors *");
-    response.headers.delete("x-frame-options");
-
-    return cacheHtml(c, response, CACHE_CONTROL);
   } catch (error) {
-    if (isStatsfmError(error)) {
-      if (typeof error.rawError === "string") {
-        return c.text(error.rawError, error.status);
-      }
-      return c.text(error.rawError.message, error.status);
-    }
-    return c.text("Internal Server Error", 500);
+    return getStatsfmErrorResponse(c, error);
   }
 };
 

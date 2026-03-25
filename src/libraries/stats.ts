@@ -5,10 +5,26 @@ export type TopTrack = statsfm.v1.TopTrack;
 export type PlayingTrack = statsfm.v1.CurrentlyPlayingTrack;
 export type Track = RecentlyTrack | TopTrack | PlayingTrack;
 
-export type LastRange = "1day" | "7day" | "1month" | "6month" | "overall";
-export type Range = "today" | "days" | "weeks" | "months" | "lifetime";
+const RANGE_MAP = {
+  "1day": statsfm.Range.DAYS,
+  "7day": statsfm.Range.WEEKS,
+  "1month": statsfm.Range.MONTHS,
+  "6month": statsfm.Range.MONTHS,
+  overall: statsfm.Range.LIFETIME,
+  [statsfm.Range.TODAY]: statsfm.Range.TODAY,
+  [statsfm.Range.DAYS]: statsfm.Range.DAYS,
+  [statsfm.Range.WEEKS]: statsfm.Range.WEEKS,
+  [statsfm.Range.MONTHS]: statsfm.Range.MONTHS,
+  [statsfm.Range.LIFETIME]: statsfm.Range.LIFETIME,
+} as const;
 
-export type Visibility = "hidden" | "visible";
+const VISIBILITY_VALUES = ["hidden", "visible"] as const;
+
+export type LegacyRange = "1day" | "7day" | "1month" | "6month" | "overall";
+export type Range = statsfm.Range;
+export type RangeParam = LegacyRange | Range;
+
+export type Visibility = (typeof VISIBILITY_VALUES)[number];
 
 export const RECENT_TRACK_LIMIT = 100;
 export const TOP_TRACK_LIMIT = 100;
@@ -40,39 +56,16 @@ export function isStatsfmError(
   );
 }
 
-export function isRange(value: string): value is LastRange & Range {
-  return (
-    value === "1day" ||
-    value === "7day" ||
-    value === "1month" ||
-    value === "6month" ||
-    value === "overall" ||
-    value === "today" ||
-    value === "days" ||
-    value === "weeks" ||
-    value === "months" ||
-    value === "lifetime"
-  );
+export function isRange(value: string): value is RangeParam {
+  return Object.hasOwn(RANGE_MAP, value);
 }
 
-export function formatRange(range: LastRange & Range): Range {
-  switch (range) {
-    case "1day":
-      return statsfm.Range.DAYS;
-    case "7day":
-      return statsfm.Range.WEEKS;
-    case "1month":
-      return statsfm.Range.MONTHS;
-    case "6month":
-      return statsfm.Range.MONTHS;
-    case "overall":
-      return statsfm.Range.LIFETIME;
-  }
-  return range;
+export function formatRange(range: RangeParam): Range {
+  return RANGE_MAP[range];
 }
 
 export function isVisibility(value: string): value is Visibility {
-  return value === "hidden" || value === "visible";
+  return VISIBILITY_VALUES.includes(value as Visibility);
 }
 
 function getStatsfmUrl(track: Track) {
@@ -151,11 +144,11 @@ export async function getRecentTracks(
 export async function getTopTracks(
   api: statsfm.Api,
   userId: string,
-  range: Range = "weeks",
+  range: Range = statsfm.Range.WEEKS,
   limit = TOP_TRACK_LIMIT
 ) {
   return await api.users.topTracks(userId, {
-    range: range as statsfm.Range,
+    range,
     orderBy: statsfm.OrderBySetting.COUNT,
     limit,
   });

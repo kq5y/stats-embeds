@@ -1,4 +1,3 @@
-import { EMBED_STYLESHEET_PATH } from "@/libraries/embed";
 import {
   type PlayingTrack,
   type RecentlyTrack,
@@ -54,7 +53,7 @@ export default function View({ title, type, tracks }: ViewProps) {
       <head>
         <meta charset="utf-8" />
         <title>{title}</title>
-        <link rel="stylesheet" href={EMBED_STYLESHEET_PATH} />
+        <link rel="stylesheet" href="/embed/styles.css" />
         <link
           rel="preconnect"
           href="https://i.scdn.co"

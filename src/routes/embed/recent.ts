@@ -1,14 +1,17 @@
 import type { Handler } from "hono";
 
-import View from "@/components/View";
-import { cacheHtml, getCacheControl, getCachedHtml } from "@/libraries/cache";
+import { type CacheOptions, getCacheControl } from "@/libraries/cache";
+import {
+  getCachedEmbedResponse,
+  getStatsfmErrorResponse,
+  renderEmbedResponse,
+} from "@/libraries/embed-response";
 import {
   type PlayingTrack,
   type RecentlyTrack,
   getApi,
   getPlayingTrack,
   getRecentTracks,
-  isStatsfmError,
   isVisibility,
 } from "@/libraries/stats";
 
@@ -24,6 +27,18 @@ const CACHE_CONTROL_HIDDEN = getCacheControl({
   staleWhileRevalidate: 600,
 });
 
+const CACHE_OPTIONS_VISIBLE: CacheOptions = {
+  cacheControl: CACHE_CONTROL_VISIBLE,
+  defaultSearchParams: { now: "visible" },
+  searchParams: ["user", "now"],
+};
+
+const CACHE_OPTIONS_HIDDEN: CacheOptions = {
+  cacheControl: CACHE_CONTROL_HIDDEN,
+  defaultSearchParams: { now: "visible" },
+  searchParams: ["user", "now"],
+};
+
 const handler: Handler<Env, "recent"> = async (c) => {
   try {
     const { user, now = "visible" } = c.req.query();
@@ -35,9 +50,9 @@ const handler: Handler<Env, "recent"> = async (c) => {
       return c.text("Invalid visibility", 400);
     }
 
-    const cacheControl =
-      now === "visible" ? CACHE_CONTROL_VISIBLE : CACHE_CONTROL_HIDDEN;
-    const cachedResponse = await getCachedHtml(c, cacheControl);
+    const cacheOptions =
+      now === "visible" ? CACHE_OPTIONS_VISIBLE : CACHE_OPTIONS_HIDDEN;
+    const cachedResponse = await getCachedEmbedResponse(c, cacheOptions);
     if (cachedResponse) {
       return cachedResponse;
     }
@@ -51,32 +66,26 @@ const handler: Handler<Env, "recent"> = async (c) => {
       recentTracksPromise,
       playingTrackPromise,
     ]);
-    const tracks = recentTracks as (RecentlyTrack | PlayingTrack)[];
+    const tracks = playingTrack
+      ? [
+          playingTrack,
+          ...(recentTracks as (RecentlyTrack | PlayingTrack)[]).filter(
+            (track) => track.track.id !== playingTrack.track.id
+          ),
+        ]
+      : (recentTracks as (RecentlyTrack | PlayingTrack)[]);
 
-    if (playingTrack) {
-      tracks.unshift(playingTrack);
-    }
-
-    const response = c.html(
-      View({
+    return renderEmbedResponse(
+      c,
+      {
         title: `Recently Played by ${user}`,
         type: "recently",
         tracks,
-      }),
-      200
+      },
+      cacheOptions
     );
-    response.headers.set("Content-Security-Policy", "frame-ancestors *");
-    response.headers.delete("x-frame-options");
-
-    return cacheHtml(c, response, cacheControl);
   } catch (error) {
-    if (isStatsfmError(error)) {
-      if (typeof error.rawError === "string") {
-        return c.text(error.rawError, error.status);
-      }
-      return c.text(error.rawError.message, error.status);
-    }
-    return c.text("Internal Server Error", 500);
+    return getStatsfmErrorResponse(c, error);
   }
 };
 

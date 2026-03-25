@@ -1,6 +1,3 @@
-export const EMBED_STYLESHEET_PATH = "/embed/styles.css";
-
-export const EMBED_STYLESHEET = `
 body {
   margin: 0;
 }
@@ -177,4 +174,3 @@ a:hover h3 {
     padding-right: 0.25rem;
   }
 }
-`.trim();
